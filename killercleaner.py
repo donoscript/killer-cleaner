@@ -239,7 +239,9 @@ class DialogOperator2(bpy.types.Operator):
                 #layout.label(text="%01d Objects with modifiers selected" % settings.lenModifierList, icon='VISIBLE_IPO_ON')
                     
     def execute(self, context):
-        self.report({'INFO'}, "OBJECTS WITH MODIFIERS SELECTED !")        
+        settings = context.scene.killer_cleaner_settings
+        if settings.lenModifierList>0:
+            self.report({'INFO'}, "OBJECTS WITH MODIFIERS SELECTED !")        
         return {'FINISHED'}
 
     def invoke(self, context, event):

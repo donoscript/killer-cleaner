@@ -154,14 +154,15 @@ class DialogOperator(bpy.types.Operator):
                 ## APPLY SCALE (if no modifier)
                 if settings.apply_scale == True:
                     if ob.modifiers:
-                        myModifierList.append(ob.name)
-                        settings.lenModifierList +=1
+                        print( ob.scale)
+                        if ob.scale[0] != 1 and ob.scale[1] != 1 and ob.scale[2] != 1:
+                            myModifierList.append(ob.name)
+                            settings.lenModifierList +=1
                     else:
                         mat = Matrix()
                         mat[0][0], mat[1][1], mat[2][2] = ob.matrix_world.to_scale()
                         ob.data.transform(mat)
-                        ob.matrix_world = ob.matrix_world.normalized()                           
-                        
+                        ob.matrix_world = ob.matrix_world.normalized()                                                 
                 ## AUTO SMOOTH
                 if settings.autosmooth == True:
                     ob.data.use_auto_smooth = True

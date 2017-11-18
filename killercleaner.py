@@ -230,20 +230,12 @@ class DialogOperator2(bpy.types.Operator):
         
         layout = self.layout        
         row = layout.row()
-        layout.label(text="Killer Cleaner has removed %s faces"%(polycount_before-polycount_after), icon='SOLO_ON')
-        row = layout.row()
-        row = layout.row()
-        row = layout.row()
-        row = layout.row()
-        row = layout.row()
-        row = layout.row()
-        row = layout.row()
-        row = layout.row()
-        row = layout.row()
+        layout.label(text="%s faces removed"%(polycount_before-polycount_after), icon='SOLO_ON')
+
         if settings.apply_scale == True:
             if settings.lenModifierList>0:
-                layout.label(text="Scale not applied on %01d" % settings.lenModifierList +" objects" , icon="OUTLINER_OB_LAMP")
-                layout.label(text="These objects with modifiers have been selected", icon='VISIBLE_IPO_ON')
+                layout.label(text="%01d" % settings.lenModifierList +" objects with modifier selected: scale not applied" , icon="OUTLINER_OB_LAMP")
+                #layout.label(text="%01d Objects with modifiers selected" % settings.lenModifierList, icon='VISIBLE_IPO_ON')
                     
     def execute(self, context):
         self.report({'INFO'}, "OBJECTS WITH MODIFIERS SELECTED !")        

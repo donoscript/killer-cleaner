@@ -166,7 +166,7 @@ class DialogOperator(bpy.types.Operator):
                 if settings.autosmooth == True:
                     ob.data.use_auto_smooth = True
                     ob.data.auto_smooth_angle = math.radians(30)
-                    for poly in bpy.context.object.data.polygons:
+                    for poly in ob.data.polygons:
                         poly.use_smooth = True
                 
                 ## DOUBLE SIDED

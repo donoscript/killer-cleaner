@@ -23,10 +23,18 @@ from math import pi
 from bpy.props import *
 from mathutils import Matrix
 
-## DECLARE
+## FUNCTION to apply_scale on object and children
+def apply_scale(ob):    
+    mat = Matrix()
+    mat[0][0], mat[1][1], mat[2][2] = ob.matrix_world.to_scale()
+    ob.data.transform(mat)
+    ob.matrix_world = ob.matrix_world.normalized()
 
+
+## DECLARE
 myModifierList = []
 myList = []
+
 
 
 ## MENU text and icon
@@ -100,6 +108,8 @@ class DialogOperator(bpy.types.Operator):
             ## IF GROUP
             if ob.type == 'EMPTY':
                 continue
+            if ob.type == 'CAMERA':
+                continue
             
             ## RENAME OBJECT AND MESH
             if settings.rename_objects == True:
@@ -130,7 +140,7 @@ class DialogOperator(bpy.types.Operator):
                 
                 ## TRIS TO QUADS
                 if settings.tris_to_quad == True:
-                    bmesh.ops.join_triangles(bm, faces = bm.faces,angle_face_threshold = pi,angle_shape_threshold =pi)
+                    bmesh.ops.join_triangles(bm, faces = bm.faces,angle_face_threshold = math.radians(40),angle_shape_threshold =math.radians(40))
                 
                 ## RECALCULATE NORMALS
                 if settings.recalculate_normals == True:
@@ -154,33 +164,52 @@ class DialogOperator(bpy.types.Operator):
                 ## APPLY SCALE (if no modifier)
                 if settings.apply_scale == True:
                     if ob.modifiers:
-                        print( ob.scale)
-                        if ob.scale[0] != 1 and ob.scale[1] != 1 and ob.scale[2] != 1:
+                        
+                        if not(ob.scale[0] == 1 and ob.scale[1] == 1 and ob.scale[2] == 1):
                             myModifierList.append(ob.name)
                             settings.lenModifierList +=1
                     else:
-                        mat = Matrix()
-                        mat[0][0], mat[1][1], mat[2][2] = ob.matrix_world.to_scale()
-                        ob.data.transform(mat)
-                        ob.matrix_world = ob.matrix_world.normalized()                                                 
+                        list_children = []
+
+                        if ob.children:
+                                for child in ob.children:
+                                    list_children.append([child,child.matrix_world])
+                                
+                                for child in ob.children:
+                                        
+                                    if child.modifiers:
+                                        print('on passe notre tour')
+                                        pass
+                                    else:      
+                                        
+                                        apply_scale(ob)
+                                    
+                                        for c in list_children:
+                                            c[0].matrix_world = c[1]
+                                            apply_scale(c[0])                        
+                      
                 ## AUTO SMOOTH
                 if settings.autosmooth == True:
-                    ob.data.use_auto_smooth = True
-                    ob.data.auto_smooth_angle = math.radians(30)
-                    for poly in ob.data.polygons:
-                        poly.use_smooth = True
+                    if ob.type == 'MESH':
+                        ob.data.use_auto_smooth = True
+                        ob.data.auto_smooth_angle = math.radians(30)
+                        for poly in ob.data.polygons:
+                            poly.use_smooth = True
                 
                 ## DOUBLE SIDED
                 if settings.double_sided == True:
-                    ob.data.show_double_sided = True
+                    if ob.type == 'MESH':
+                        ob.data.show_double_sided = True
 
                 ## REMOVE MATERIALS
                 if settings.remove_material == True:
-                    ob.data.materials.clear(True)
+                    if ob.type == 'MESH':
+                        ob.data.materials.clear(True)
                
                 ## PRINT NAME AND POLYCOUNT len(object.data.vertices)
                 #print (index, "/", len(bpy.context.selected_objects))
-                myList.append((ob.name, len(ob.data.polygons)))
+                if ob.type == 'MESH' and ob.type !='CAMERA':
+                    myList.append((ob.name, len(ob.data.polygons)))
 
         ## PRINT LIST
         #for item in sorted(myList, key=lambda a : a[1], reverse=False):
@@ -235,13 +264,13 @@ class DialogOperator2(bpy.types.Operator):
 
         if settings.apply_scale == True:
             if settings.lenModifierList>0:
-                layout.label(text="%01d" % settings.lenModifierList +" objects with modifier selected : scale not applied" , icon="OUTLINER_OB_LAMP")
+                layout.label(text="%01d" % settings.lenModifierList +" object(s) with modifier selected : scale not applied" , icon="OUTLINER_OB_LAMP")
                 #layout.label(text="%01d Objects with modifiers selected" % settings.lenModifierList, icon='VISIBLE_IPO_ON')
                     
     def execute(self, context):
         settings = context.scene.killer_cleaner_settings
         if settings.lenModifierList>0:
-            self.report({'INFO'}, "OBJECTS WITH MODIFIERS SELECTED !")        
+            self.report({'INFO'}, "Object(s) with modifiers selected !")        
         return {'FINISHED'}
 
     def invoke(self, context, event):

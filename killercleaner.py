@@ -28,7 +28,8 @@ def apply_scale(ob):
     mat = Matrix()
     mat[0][0], mat[1][1], mat[2][2] = ob.matrix_world.to_scale()
     ob.data.transform(mat)
-    ob.matrix_world = ob.matrix_world.normalized()
+    ##ob.matrix_world = ob.matrix_world.normalized()
+    ob.scale = [1,1,1]
 
 
 ## DECLARE

@@ -212,31 +212,29 @@ class DialogOperator(bpy.types.Operator):
                                 elif mod_array == False:
                                     apply_scale(ob)      
                                                         
-                            
+                    ## IF PARENT AND CHILDREN        
                     else:
-                        
-                        ## IF PARENT AND CHILDREN
-                        list_children = []
-
                         if ob.children:
-                                for child in ob.children:
-                                    list_children.append([child,child.matrix_world])
-                                
-                                for child in ob.children:
-                                        
-                                    if child.modifiers:
-                                        print('on passe notre tour')
-                                        pass
-                                    else:      
-                                        
-                                        apply_scale(ob)
+                            list_children = []
+                            for child in ob.children:
+                                list_children.append([child,child.matrix_world])                          
+                            for child in ob.children:                                    
+                                if child.modifiers:
+                                    print('on passe notre tour')
+                                    myModifierList.append(ob.name)
+                                    settings.lenModifierList +=1
+                                    pass
+                                else:                                      
+                                    apply_scale(ob)
                                     
-                                        for c in list_children:
-                                            c[0].matrix_world = c[1]
-                                            apply_scale(c[0])
+                                
+                                    for c in list_children:
+                                        c[0].matrix_world = c[1]
+                                        apply_scale(c[0])
+                                                 
                         else:
-                            apply_scale(ob)                       
-                      
+                            apply_scale(ob)
+                                                          
                 ## AUTO SMOOTH
                 if settings.autosmooth == True:
                     if ob.type == 'MESH':
@@ -313,13 +311,13 @@ class DialogOperator2(bpy.types.Operator):
 
         if settings.apply_scale == True:
             if settings.lenModifierList>0:
-                layout.label(text="%01d" % settings.lenModifierList +" object(s) with modifier selected : scale not applied" , icon="OUTLINER_OB_LAMP")
+                layout.label(text="%01d" % settings.lenModifierList +" object(s) selected : scale not applied" , icon="OUTLINER_OB_LAMP")
                 #layout.label(text="%01d Objects with modifiers selected" % settings.lenModifierList, icon='VISIBLE_IPO_ON')
                     
     def execute(self, context):
         settings = context.scene.killer_cleaner_settings
         if settings.lenModifierList>0:
-            self.report({'INFO'}, "Object(s) with modifiers selected !")        
+            self.report({'INFO'}, "Object(s) selected : scale not applied")        
         return {'FINISHED'}
 
     def invoke(self, context, event):

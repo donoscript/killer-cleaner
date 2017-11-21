@@ -22,14 +22,18 @@ import math
 from math import pi
 from bpy.props import *
 from mathutils import Matrix
+from statistics import mean
 
 ## FUNCTION to apply_scale on object and children
 def apply_scale(ob):    
-    mat = Matrix()
-    mat[0][0], mat[1][1], mat[2][2] = ob.matrix_world.to_scale()
-    ob.data.transform(mat)
-    ##ob.matrix_world = ob.matrix_world.normalized()
-    ob.scale = [1,1,1]
+#    mat = Matrix()
+#    mat[0][0], mat[1][1], mat[2][2] = ob.matrix_world.to_scale()
+#    ob.data.transform(mat)
+#    ob.matrix_world = ob.matrix_world.normalized()
+#    ob.scale = [1,1,1]
+    ob.select = True
+    bpy.ops.object.transform_apply(scale = True)
+    ob.select = False
 
 
 ## DECLARE
@@ -78,6 +82,11 @@ class DialogOperator(bpy.types.Operator):
         myModifierList = []
         settings = scene.killer_cleaner_settings
         settings.lenModifierList = 0
+        list_selected=[]
+        for ob in bpy.context.selected_objects:
+            list_selected.append(ob)
+            ob.select= False
+        bpy.ops.object.select_all(action='DESELECT')
                 
         ## PROGRESS BAR
         wm = bpy.context.window_manager
@@ -91,7 +100,7 @@ class DialogOperator(bpy.types.Operator):
         settings.polycount_before = 0
         settings.polycount_after = 0
                 
-        for index,ob in enumerate(bpy.context.selected_objects) :
+        for index,ob in enumerate(list_selected) :
             if ob.type == 'MESH':
                 settings.polycount_before+=len(ob.data.polygons)
         
@@ -101,7 +110,7 @@ class DialogOperator(bpy.types.Operator):
                 ob.name=""
         
         ## FOR IN SELECTED OBJECTS
-        for index,ob in enumerate(bpy.context.selected_objects) :
+        for index,ob in enumerate(list_selected) :
 
             ## PROGRESS BAR
             wm.progress_update(index/100)
@@ -137,7 +146,9 @@ class DialogOperator(bpy.types.Operator):
 
                 ## REMOVE DOUBLES
                 if settings.remove_doubles == True:
+                    
                     bmesh.ops.remove_doubles(bm, verts=bm.verts, dist=0.0)
+                    
                 
                 ## TRIS TO QUADS
                 if settings.tris_to_quad == True:
@@ -156,39 +167,74 @@ class DialogOperator(bpy.types.Operator):
                 if settings.clear_custom_normal == True:
                     bpy.ops.mesh.customdata_custom_splitnormals_clear(override)
                 
-                ## MAKE SINGLE USER OBJECT DATA
-                #if ob.data.users>1:
-                
+                ## MAKE SINGLE USER OBJECT DATA    
                 if settings.make_single_user == True:
                     ob.data = ob.data.copy()
                 
-                ## APPLY SCALE (if no modifier)
+                ## APPLY SCALE
                 if settings.apply_scale == True:
                     if ob.modifiers:
                         
                         if not(ob.scale[0] == 1 and ob.scale[1] == 1 and ob.scale[2] == 1):
-                            myModifierList.append(ob.name)
-                            settings.lenModifierList +=1
-                    else:
-                        list_children = []
-
-                        if ob.children:
-                                for child in ob.children:
-                                    list_children.append([child,child.matrix_world])
-                                
-                                for child in ob.children:
-                                        
-                                    if child.modifiers:
-                                        print('on passe notre tour')
-                                        pass
-                                    else:      
-                                        
+                            # APPLY SCALE IF MODIFIER ARRAY
+                            for mo in ob.modifiers:
+                                mod_array = False
+                                if mo.type == 'ARRAY':
+                                    if ob.scale.x < 0 or ob.scale.y < 0 or ob.scale.z < 0:
+                                        myModifierList.append(ob.name)
+                                        settings.lenModifierList +=1
+                                        mod_array = True
+                                        print (mod_array)
+                                        break
+                                    else:
                                         apply_scale(ob)
+                            for mo in ob.modifiers:                                   
+                                ## APPLY SCALE IF MODIFIER BEVEL   
+                                if mo.type == 'BEVEL' and mod_array == False:
+                                    print('Bevel modifier detected')
+                                    old_bevel = mo.width
+                                    new_bevel = old_bevel * ((abs(ob.scale[0])+abs(ob.scale[1])+abs(ob.scale[2]))/3)
+                                    mo.width = new_bevel
+                                    apply_scale (ob)
+
+                                ## APPLY SCALE IF MODIFIER SOLIDIFY                       
+                                if mo.type == 'SOLIDIFY' and mod_array == False:
+                                    print('Bevel modifier detected')
+                                    old_solidify = mo.thickness
+                                    new_solidify = old_solidify * mean(ob.scale)
+                                    mo.thickness = new_solidify
+                                    apply_scale (ob)
+
+                                # APPLY SCALE IF MODIFIER SUBSURF
+                                if mo.type == 'SUBSURF' and mod_array == False:
+                                    apply_scale (ob)
+                                
+                                elif mod_array == False:
+                                    apply_scale(ob)      
+                                                        
+                    ## IF PARENT AND CHILDREN        
+                    else:
+                        if ob.children:
+                            list_children = []
+                            for child in ob.children:
+                                list_children.append([child,child.matrix_world])                          
+                            for child in ob.children:                                    
+                                if child.modifiers:
+                                    print('on passe notre tour')
+                                    myModifierList.append(ob.name)
+                                    settings.lenModifierList +=1
+                                    pass
+                                else:                                      
+                                    apply_scale(ob)
                                     
-                                        for c in list_children:
-                                            c[0].matrix_world = c[1]
-                                            apply_scale(c[0])                        
-                      
+                                
+                                    for c in list_children:
+                                        c[0].matrix_world = c[1]
+                                        apply_scale(c[0])
+                                                 
+                        else:
+                            apply_scale(ob)
+                                                          
                 ## AUTO SMOOTH
                 if settings.autosmooth == True:
                     if ob.type == 'MESH':
@@ -215,7 +261,7 @@ class DialogOperator(bpy.types.Operator):
         ## PRINT LIST
         #for item in sorted(myList, key=lambda a : a[1], reverse=False):
         #    print (item)
-        for index,ob in enumerate(bpy.context.selected_objects) :
+        for index,ob in enumerate(list_selected) :
             if ob.type == 'MESH':
                 settings.polycount_after+=len(ob.data.polygons)
             
@@ -265,13 +311,13 @@ class DialogOperator2(bpy.types.Operator):
 
         if settings.apply_scale == True:
             if settings.lenModifierList>0:
-                layout.label(text="%01d" % settings.lenModifierList +" object(s) with modifier selected : scale not applied" , icon="OUTLINER_OB_LAMP")
+                layout.label(text="%01d" % settings.lenModifierList +" object(s) selected : scale not applied" , icon="OUTLINER_OB_LAMP")
                 #layout.label(text="%01d Objects with modifiers selected" % settings.lenModifierList, icon='VISIBLE_IPO_ON')
                     
     def execute(self, context):
         settings = context.scene.killer_cleaner_settings
         if settings.lenModifierList>0:
-            self.report({'INFO'}, "Object(s) with modifiers selected !")        
+            self.report({'INFO'}, "Object(s) selected : scale not applied")        
         return {'FINISHED'}
 
     def invoke(self, context, event):

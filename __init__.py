@@ -379,16 +379,22 @@ class CleanerPanel(bpy.types.Panel):
 
 ### Register / Unregister ###       
 def register():
-      
-    ## REGISTER    
+     ## REGISTER    
     bpy.utils.register_class(KillerCleanerSettings)
     bpy.utils.register_class(DialogOperator)
     bpy.utils.register_class(DialogOperator2)
-    bpy.types.Scene.killer_cleaner_settings = bpy.props.PointerProperty(type = KillerCleanerSettings)
     bpy.utils.register_class(CleanerPanel)
 
+    bpy.types.Scene.killer_cleaner_settings = bpy.props.PointerProperty(type = KillerCleanerSettings)
+
 def unregister():
+    ## UNREGISTER
+    bpy.utils.unregister_class(KillerCleanerSettings)
     bpy.utils.unregister_class(CleanerPanel)
+    bpy.utils.unregister_class(DialogOperator)
+    bpy.utils.unregister_class(DialogOperator2)
+
+    del bpy.types.Scene.killer_cleaner_settings
 
 if __name__ == "__main__":
     register()

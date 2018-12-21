@@ -278,12 +278,16 @@ class DialogOperator(bpy.types.Operator):
 #        bpy.ops.object.select_all(action='TOGGLE')
 
         ## SELECT OBJECTS WITH MODIFIER
-        for ob in bpy.data.objects:
-            ob.select = False
-        
-        for modifiers in myModifierList:
-            #print(settings.lenModifierList)
-            bpy.data.objects[modifiers].select=True
+#        for ob in bpy.data.objects:
+#            ob.select = False
+#        
+#        for modifiers in myModifierList:
+#            #print(settings.lenModifierList)
+#            bpy.data.objects[modifiers].select=True
+
+        ## RESELECT OBJECTS
+        for ob in list_selected :
+            ob.select = True
 
         ## END PROGRESS BAR
         wm.progress_end()      

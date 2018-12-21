@@ -10,7 +10,7 @@ bl_info = {
     "location": "View3D > Tool Shelf > Killer Cleaner",
     "warning": "",
     "wiki_url": "",
-    "category": "User",
+    "category": "Mesh",
     }
 
 ## KILLER CLEANER
@@ -43,17 +43,21 @@ myList = []
 
 
 ## MENU text and icon
-my_bool = {'remove_doubles':["LATTICE_DATA","Remove duplicate doubles"],
-             'tris_to_quad':["OUTLINER_OB_LATTICE","Join triangle into quad"],
-             'recalculate_normals':["FACESEL","Recalculate outside"],
-             'clear_custom_normal':["UV_FACESEL","Remove the custom split normals layer, if it exists"],
+# icon --- description --- name
+my_bool = {'remove_doubles':["LATTICE_DATA","Remove duplicate doubles", "Remove Doubles"],
+             'tris_to_quad':["OUTLINER_OB_LATTICE","Join triangle into quad", "Tris to Quad"],
+             'recalculate_normals':["FACESEL","Recalculate outside", "Recalculate"],
+             'clear_custom_normal':["UV_FACESEL","Remove the custom split normals layer, if it exists", "Clear Customs"],
+             'remove_all_modifiers':["MODIFIER","Remove all modifiers", "Remove All"],
+             'remove_hidden_modifiers':["MODIFIER","Remove hidden modifiers", "Remove Hidden"],
+             'remove_unrendered_modifiers':["MODIFIER","Remove unrendered modifiers", "Remove Unrendered"],
              #'apply_modifiers':"MODIFIER",
-             'double_sided':["MOD_BEVEL","Display the mesh with double sided lighting (OpenGL only)"],
-             'apply_scale':["NDOF_TRANS","Apply the object's transformation to its data"],
-             'autosmooth':["SURFACE_NCIRCLE","Auto smooth"],
-             'remove_material':["MATERIAL_DATA","Remove material"],
-             'rename_objects':["FONT_DATA", "Rename objects with 'GEO' + the Scene name"],
-             'make_single_user':["OUTLINER_OB_GROUP_INSTANCE","Make link data local"]}
+             'double_sided':["MOD_BEVEL","Display the mesh with double sided lighting (OpenGL only)", "Double Sided"],
+             'apply_scale':["NDOF_TRANS","Apply the object's transformation to its data", "Apply Scale"],
+             'autosmooth':["SURFACE_NCIRCLE","Auto smooth", "Auto Smooth"],
+             'remove_material':["MATERIAL_DATA","Remove material", "Remove Materials"],
+             'rename_objects':["FONT_DATA", "Rename objects with 'GEO' + the Scene name", "Rename"],
+             'make_single_user':["OUTLINER_OB_GROUP_INSTANCE","Make link data local", "Single User"]}
 
 ## CLASS KillerCleanerSettings
 class KillerCleanerSettings(bpy.types.PropertyGroup):
@@ -63,7 +67,7 @@ class KillerCleanerSettings(bpy.types.PropertyGroup):
     
 
 for i in my_bool:
-    setattr(KillerCleanerSettings,i,bpy.props.BoolProperty(name=i.replace('_',' ').title(), description=my_bool[i][1].replace('_',' '), default =True))
+    setattr(KillerCleanerSettings,i,bpy.props.BoolProperty(name=my_bool[i][2], description=my_bool[i][1].replace('_',' '), default =False))
 
 ## CLASS to show menu
 class DialogOperator(bpy.types.Operator):
@@ -83,15 +87,18 @@ class DialogOperator(bpy.types.Operator):
         settings = scene.killer_cleaner_settings
         settings.lenModifierList = 0
         list_selected=[]
+                        
+        ## PROGRESS BAR
+        wm = bpy.context.window_manager
+        tot = len(bpy.context.selected_objects)
+        print("Killer Cleaner --- " + str(tot) + " Objects selected ")
+        wm.progress_begin(0, tot)
+        
+        ## GET LIST OF SELECTED OBJECTS
         for ob in bpy.context.selected_objects:
             list_selected.append(ob)
             ob.select= False
         bpy.ops.object.select_all(action='DESELECT')
-                
-        ## PROGRESS BAR
-        wm = bpy.context.window_manager
-        tot = len(bpy.context.selected_objects)
-        wm.progress_begin(0, tot)
 
         ## START
         
@@ -111,7 +118,10 @@ class DialogOperator(bpy.types.Operator):
         
         ## FOR IN SELECTED OBJECTS
         for index,ob in enumerate(list_selected) :
-
+            
+            ## PRINT PROGRESS IN CONSOLE
+            print("Killer Cleaner --- Object "+str(index+1)+"/"+str(tot))
+            
             ## PROGRESS BAR
             wm.progress_update(index/100)
             
@@ -268,12 +278,16 @@ class DialogOperator(bpy.types.Operator):
 #        bpy.ops.object.select_all(action='TOGGLE')
 
         ## SELECT OBJECTS WITH MODIFIER
-        for ob in bpy.data.objects:
-            ob.select = False
-        
-        for modifiers in myModifierList:
-            #print(settings.lenModifierList)
-            bpy.data.objects[modifiers].select=True
+#        for ob in bpy.data.objects:
+#            ob.select = False
+#        
+#        for modifiers in myModifierList:
+#            #print(settings.lenModifierList)
+#            bpy.data.objects[modifiers].select=True
+
+        ## RESELECT OBJECTS
+        for ob in list_selected :
+            ob.select = True
 
         ## END PROGRESS BAR
         wm.progress_end()      
@@ -331,11 +345,11 @@ class CleanerPanel(bpy.types.Panel):
     bl_label = "Killer Cleaner"
     bl_space_type = "VIEW_3D"
     bl_region_type = "TOOLS"
-    bl_category = "Killer CLeaner"
+    bl_category = "Tools"
     
     def draw(self, context):
         bl_idname = "object.dialog_operator"
-    bl_label = "KILLER CLEANER"
+    bl_label = "Killer Cleaner"
     
     def draw(self,context):
         
@@ -365,21 +379,22 @@ class CleanerPanel(bpy.types.Panel):
 
 ### Register / Unregister ###       
 def register():
-      
-    ## REGISTER    
+     ## REGISTER    
     bpy.utils.register_class(KillerCleanerSettings)
     bpy.utils.register_class(DialogOperator)
     bpy.utils.register_class(DialogOperator2)
-    bpy.types.Scene.killer_cleaner_settings = bpy.props.PointerProperty(type = KillerCleanerSettings)
     bpy.utils.register_class(CleanerPanel)
 
+    bpy.types.Scene.killer_cleaner_settings = bpy.props.PointerProperty(type = KillerCleanerSettings)
+
 def unregister():
+    ## UNREGISTER
+    bpy.utils.unregister_class(KillerCleanerSettings)
     bpy.utils.unregister_class(CleanerPanel)
+    bpy.utils.unregister_class(DialogOperator)
+    bpy.utils.unregister_class(DialogOperator2)
+
+    del bpy.types.Scene.killer_cleaner_settings
 
 if __name__ == "__main__":
     register()
-    
-
-# call test
-#bpy.ops.object.dialog_operator('INVOKE_DEFAULT')
-

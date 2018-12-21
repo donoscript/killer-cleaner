@@ -136,8 +136,12 @@ class DialogOperator(bpy.types.Operator):
             ## RENAME OBJECT AND MESH
             if settings.rename_objects == True:
                 ind = str(index).zfill(3)
-                ob.name = "GEO_"+decor+"_"+ str(ind)
-                ob.data.name = "GEO_DATA_"+decor+"_"+ str(ind)
+                if settings.custom_rename == False :
+                    ob.name = "GEO_"+decor+"_"+ str(ind)
+                    ob.data.name = "GEO_DATA_"+decor+"_"+ str(ind)
+                else:
+                    ob.name = settings.temp_ob_rename + str(ind)
+                    ob.data.name = settings.temp_mesh_rename + str(ind)
             
             ## IF MESH
             if ob.type == 'MESH':

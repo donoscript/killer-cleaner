@@ -10,7 +10,7 @@ bl_info = {
     "location": "View3D > Tool Shelf > Killer Cleaner",
     "warning": "",
     "wiki_url": "",
-    "category": "User",
+    "category": "Mesh",
     }
 
 ## KILLER CLEANER
@@ -43,17 +43,21 @@ myList = []
 
 
 ## MENU text and icon
-my_bool = {'remove_doubles':["LATTICE_DATA","Remove duplicate doubles"],
-             'tris_to_quad':["OUTLINER_OB_LATTICE","Join triangle into quad"],
-             'recalculate_normals':["FACESEL","Recalculate outside"],
-             'clear_custom_normal':["UV_FACESEL","Remove the custom split normals layer, if it exists"],
+# icon --- description --- name
+my_bool = {'remove_doubles':["LATTICE_DATA","Remove duplicate doubles", "Remove Doubles"],
+             'tris_to_quad':["OUTLINER_OB_LATTICE","Join triangle into quad", "Tris to Quad"],
+             'recalculate_normals':["FACESEL","Recalculate outside", "Recalculate"],
+             'clear_custom_normal':["UV_FACESEL","Remove the custom split normals layer, if it exists", "Clear Customs"],
+             'remove_all_modifiers':["MODIFIER","Remove all modifiers", "Remove All"],
+             'remove_hidden_modifiers':["MODIFIER","Remove hidden modifiers", "Remove Hidden"],
+             'remove_unrendered_modifiers':["MODIFIER","Remove unrendered modifiers", "Remove Unrendered"],
              #'apply_modifiers':"MODIFIER",
-             'double_sided':["MOD_BEVEL","Display the mesh with double sided lighting (OpenGL only)"],
-             'apply_scale':["NDOF_TRANS","Apply the object's transformation to its data"],
-             'autosmooth':["SURFACE_NCIRCLE","Auto smooth"],
-             'remove_material':["MATERIAL_DATA","Remove material"],
-             'rename_objects':["FONT_DATA", "Rename objects with 'GEO' + the Scene name"],
-             'make_single_user':["OUTLINER_OB_GROUP_INSTANCE","Make link data local"]}
+             'double_sided':["MOD_BEVEL","Display the mesh with double sided lighting (OpenGL only)", "Double Sided"],
+             'apply_scale':["NDOF_TRANS","Apply the object's transformation to its data", "Apply Scale"],
+             'autosmooth':["SURFACE_NCIRCLE","Auto smooth", "Auto Smooth"],
+             'remove_material':["MATERIAL_DATA","Remove material", "Remove Materials"],
+             'rename_objects':["FONT_DATA", "Rename objects with 'GEO' + the Scene name", "Rename"],
+             'make_single_user':["OUTLINER_OB_GROUP_INSTANCE","Make link data local", "Single User"]}
 
 ## CLASS KillerCleanerSettings
 class KillerCleanerSettings(bpy.types.PropertyGroup):
@@ -63,7 +67,7 @@ class KillerCleanerSettings(bpy.types.PropertyGroup):
     
 
 for i in my_bool:
-    setattr(KillerCleanerSettings,i,bpy.props.BoolProperty(name=i.replace('_',' ').title(), description=my_bool[i][1].replace('_',' '), default =True))
+    setattr(KillerCleanerSettings,i,bpy.props.BoolProperty(name=my_bool[i][2], description=my_bool[i][1].replace('_',' '), default =False))
 
 ## CLASS to show menu
 class DialogOperator(bpy.types.Operator):

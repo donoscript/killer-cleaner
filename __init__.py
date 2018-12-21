@@ -398,8 +398,3 @@ def unregister():
 
 if __name__ == "__main__":
     register()
-    
-
-# call test
-#bpy.ops.object.dialog_operator('INVOKE_DEFAULT')
-

@@ -186,6 +186,20 @@ class DialogOperator(bpy.types.Operator):
                 ## MAKE SINGLE USER OBJECT DATA    
                 if settings.make_single_user == True:
                     ob.data = ob.data.copy()
+                    
+                ## REMOVE MODIFIERS
+                if settings.remove_all_modifiers or settings.remove_hidden_modifiers or settings.remove_unrendered_modifiers :
+                    if ob.modifiers:
+                        for mo in ob.modifiers:
+                            if settings.remove_all_modifiers:
+                                ob.modifiers.remove(mo)
+                            else:
+                                if settings.remove_hidden_modifiers:
+                                    if mo.show_viewport==False :
+                                        ob.modifiers.remove(mo)
+                                if settings.remove_unrendered_modifiers:
+                                    if mo.show_render==False :
+                                        ob.modifiers.remove(mo)
                 
                 ## APPLY SCALE
                 if settings.apply_scale == True:

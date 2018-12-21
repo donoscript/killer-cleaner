@@ -64,7 +64,9 @@ class KillerCleanerSettings(bpy.types.PropertyGroup):
     polycount_before = bpy.props.IntProperty()
     polycount_after = bpy.props.IntProperty()
     lenModifierList = bpy.props.IntProperty()
-    
+    custom_rename = bpy.props.BoolProperty(name="Custom Rename", default=False)
+    temp_ob_rename = bpy.props.StringProperty(name="Rename in", default="GEO_")
+    temp_mesh_rename = bpy.props.StringProperty(name="Rename in", default="GEO_DATA_")    
 
 for i in my_bool:
     setattr(KillerCleanerSettings,i,bpy.props.BoolProperty(name=my_bool[i][2], description=my_bool[i][1].replace('_',' '), default =False))

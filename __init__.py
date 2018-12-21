@@ -369,7 +369,7 @@ class CleanerPanel(bpy.types.Panel):
     
     def draw(self, context):
         bl_idname = "object.dialog_operator"
-    bl_label = "Killer Cleaner"
+        bl_label = "Killer Cleaner"
     
     def draw(self,context):
         
@@ -377,25 +377,52 @@ class CleanerPanel(bpy.types.Panel):
         layout = self.layout
         settings = context.scene.killer_cleaner_settings
         
+        bigcol = layout.column(align=False)
         
-        row=layout.row()
-        row=layout.row()
-        row=layout.row()
-        
-        for prop,icon in my_bool.items():
-            layout.prop(settings, prop, icon=icon[0])
+        ## OBJECT
+        box2 = bigcol.box()
+        box2.label("Object", icon="OBJECT_DATAMODE")
+        col = box2.column(align=True)
+        col.prop(settings, 'make_single_user', icon='OUTLINER_OB_GROUP_INSTANCE')
+        col.prop(settings, 'rename_objects', icon='FONT_DATA')
+        if settings.rename_objects:
+            col.prop(settings, "custom_rename", icon='SORTALPHA')
+            if settings.custom_rename:
+                col.prop(settings, "temp_ob_rename", text='', icon='OBJECT_DATAMODE')
+                col.prop(settings, "temp_mesh_rename", text='', icon='OUTLINER_DATA_MESH')
 
-            #row.label(icon=icon)
-            #row.prop(settings, prop)
-            
-        row=layout.row()
-        row=layout.row()
+        ## SHADING
+        box2 = bigcol.box()
+        box2.label("Shading", icon="MATERIAL")
+        col = box2.column(align=True)
+        col.prop(settings, 'remove_material', icon='MATERIAL_DATA')
+        col.prop(settings, 'double_sided', icon='MOD_BEVEL')
+        col.prop(settings, 'autosmooth', icon='SURFACE_NCIRCLE')
 
-        layout = self.layout
-        layout = self.layout
-        layout.operator("object.dialog_operator", icon = "SOLO_ON") #Create button Assign
-        
-        
+        ## MESH
+        box2 = bigcol.box()
+        box2.label("Mesh", icon="OUTLINER_DATA_MESH")
+        col = box2.column(align=True)
+        col.prop(settings, 'remove_doubles', icon='LATTICE_DATA')
+        col.prop(settings, 'tris_to_quad', icon='OUTLINER_OB_LATTICE')
+        col.prop(settings, 'apply_scale', icon='NDOF_TRANS')
+
+        ## NORMALS
+        box2 = bigcol.box()
+        box2.label("Normals", icon="SNAP_NORMAL")
+        col = box2.column(align=True)
+        col.prop(settings, 'clear_custom_normal', icon='UV_FACESEL')
+        col.prop(settings, 'recalculate_normals', icon='FACESEL')
+
+        ## MODIFIERS
+        box2 = bigcol.box()
+        box2.label("Modifiers", icon="MODIFIER")
+        col = box2.column(align=True)
+        col.prop(settings, 'remove_all_modifiers', icon='MODIFIER')
+        col.prop(settings, 'remove_hidden_modifiers', icon='RESTRICT_VIEW_OFF')
+        col.prop(settings, 'remove_unrendered_modifiers', icon='RESTRICT_RENDER_OFF')
+
+        layout.operator("object.dialog_operator", icon = "FILE_TICK") #Create button Assign
 
 ### Register / Unregister ###       
 def register():

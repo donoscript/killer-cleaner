@@ -87,15 +87,18 @@ class DialogOperator(bpy.types.Operator):
         settings = scene.killer_cleaner_settings
         settings.lenModifierList = 0
         list_selected=[]
+                        
+        ## PROGRESS BAR
+        wm = bpy.context.window_manager
+        tot = len(bpy.context.selected_objects)
+        print("Killer Cleaner --- " + str(tot) + " Objects selected ")
+        wm.progress_begin(0, tot)
+        
+        ## GET LIST OF SELECTED OBJECTS
         for ob in bpy.context.selected_objects:
             list_selected.append(ob)
             ob.select= False
         bpy.ops.object.select_all(action='DESELECT')
-                
-        ## PROGRESS BAR
-        wm = bpy.context.window_manager
-        tot = len(bpy.context.selected_objects)
-        wm.progress_begin(0, tot)
 
         ## START
         
@@ -115,7 +118,10 @@ class DialogOperator(bpy.types.Operator):
         
         ## FOR IN SELECTED OBJECTS
         for index,ob in enumerate(list_selected) :
-
+            
+            ## PRINT PROGRESS IN CONSOLE
+            print("Killer Cleaner --- Object "+str(index+1)+"/"+str(tot))
+            
             ## PROGRESS BAR
             wm.progress_update(index/100)
             

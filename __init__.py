@@ -345,11 +345,11 @@ class CleanerPanel(bpy.types.Panel):
     bl_label = "Killer Cleaner"
     bl_space_type = "VIEW_3D"
     bl_region_type = "TOOLS"
-    bl_category = "Killer CLeaner"
+    bl_category = "Tools"
     
     def draw(self, context):
         bl_idname = "object.dialog_operator"
-    bl_label = "KILLER CLEANER"
+    bl_label = "Killer Cleaner"
     
     def draw(self,context):
         

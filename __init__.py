@@ -10,7 +10,7 @@ bl_info = {
     "location": "View3D > Tool Shelf > Killer Cleaner",
     "warning": "",
     "wiki_url": "",
-    "category": "User",
+    "category": "Mesh",
     }
 
 ## KILLER CLEANER
@@ -43,27 +43,33 @@ myList = []
 
 
 ## MENU text and icon
-my_bool = {'remove_doubles':["LATTICE_DATA","Remove duplicate doubles"],
-             'tris_to_quad':["OUTLINER_OB_LATTICE","Join triangle into quad"],
-             'recalculate_normals':["FACESEL","Recalculate outside"],
-             'clear_custom_normal':["UV_FACESEL","Remove the custom split normals layer, if it exists"],
+# icon --- description --- name
+my_bool = {'remove_doubles':["LATTICE_DATA","Remove duplicate doubles", "Remove Doubles"],
+             'tris_to_quad':["OUTLINER_OB_LATTICE","Join triangle into quad", "Tris to Quad"],
+             'recalculate_normals':["FACESEL","Recalculate outside", "Recalculate"],
+             'clear_custom_normal':["UV_FACESEL","Remove the custom split normals layer, if it exists", "Clear Customs"],
+             'remove_all_modifiers':["MODIFIER","Remove all modifiers", "Remove All"],
+             'remove_hidden_modifiers':["MODIFIER","Remove hidden modifiers", "Remove Hidden"],
+             'remove_unrendered_modifiers':["MODIFIER","Remove unrendered modifiers", "Remove Unrendered"],
              #'apply_modifiers':"MODIFIER",
-             'double_sided':["MOD_BEVEL","Display the mesh with double sided lighting (OpenGL only)"],
-             'apply_scale':["NDOF_TRANS","Apply the object's transformation to its data"],
-             'autosmooth':["SURFACE_NCIRCLE","Auto smooth"],
-             'remove_material':["MATERIAL_DATA","Remove material"],
-             'rename_objects':["FONT_DATA", "Rename objects with 'GEO' + the Scene name"],
-             'make_single_user':["OUTLINER_OB_GROUP_INSTANCE","Make link data local"]}
+             'double_sided':["MOD_BEVEL","Display the mesh with double sided lighting (OpenGL only)", "Double Sided"],
+             'apply_scale':["NDOF_TRANS","Apply the object's transformation to its data", "Apply Scale"],
+             'autosmooth':["SURFACE_NCIRCLE","Auto smooth", "Auto Smooth"],
+             'remove_material':["MATERIAL_DATA","Remove material", "Remove Materials"],
+             'rename_objects':["FONT_DATA", "Rename objects with 'GEO' + the Scene name", "Rename"],
+             'make_single_user':["OUTLINER_OB_GROUP_INSTANCE","Make link data local", "Single User"]}
 
 ## CLASS KillerCleanerSettings
 class KillerCleanerSettings(bpy.types.PropertyGroup):
     polycount_before = bpy.props.IntProperty()
     polycount_after = bpy.props.IntProperty()
     lenModifierList = bpy.props.IntProperty()
-    
+    custom_rename = bpy.props.BoolProperty(name="Custom Rename", default=False)
+    temp_ob_rename = bpy.props.StringProperty(name="Rename in", default="GEO_")
+    temp_mesh_rename = bpy.props.StringProperty(name="Rename in", default="GEO_DATA_")    
 
 for i in my_bool:
-    setattr(KillerCleanerSettings,i,bpy.props.BoolProperty(name=i.replace('_',' ').title(), description=my_bool[i][1].replace('_',' '), default =True))
+    setattr(KillerCleanerSettings,i,bpy.props.BoolProperty(name=my_bool[i][2], description=my_bool[i][1].replace('_',' '), default =False))
 
 ## CLASS to show menu
 class DialogOperator(bpy.types.Operator):
@@ -83,15 +89,18 @@ class DialogOperator(bpy.types.Operator):
         settings = scene.killer_cleaner_settings
         settings.lenModifierList = 0
         list_selected=[]
+                        
+        ## PROGRESS BAR
+        wm = bpy.context.window_manager
+        tot = len(bpy.context.selected_objects)
+        print("Killer Cleaner --- " + str(tot) + " Objects selected ")
+        wm.progress_begin(0, tot)
+        
+        ## GET LIST OF SELECTED OBJECTS
         for ob in bpy.context.selected_objects:
             list_selected.append(ob)
             ob.select= False
         bpy.ops.object.select_all(action='DESELECT')
-                
-        ## PROGRESS BAR
-        wm = bpy.context.window_manager
-        tot = len(bpy.context.selected_objects)
-        wm.progress_begin(0, tot)
 
         ## START
         
@@ -111,7 +120,10 @@ class DialogOperator(bpy.types.Operator):
         
         ## FOR IN SELECTED OBJECTS
         for index,ob in enumerate(list_selected) :
-
+            
+            ## PRINT PROGRESS IN CONSOLE
+            print("Killer Cleaner --- Object "+str(index+1)+"/"+str(tot))
+            
             ## PROGRESS BAR
             wm.progress_update(index/100)
             
@@ -124,8 +136,12 @@ class DialogOperator(bpy.types.Operator):
             ## RENAME OBJECT AND MESH
             if settings.rename_objects == True:
                 ind = str(index).zfill(3)
-                ob.name = "GEO_"+decor+"_"+ str(ind)
-                ob.data.name = "GEO_DATA_"+decor+"_"+ str(ind)
+                if settings.custom_rename == False :
+                    ob.name = "GEO_"+decor+"_"+ str(ind)
+                    ob.data.name = "GEO_DATA_"+decor+"_"+ str(ind)
+                else:
+                    ob.name = settings.temp_ob_rename + str(ind)
+                    ob.data.name = settings.temp_mesh_rename + str(ind)
             
             ## IF MESH
             if ob.type == 'MESH':
@@ -170,6 +186,20 @@ class DialogOperator(bpy.types.Operator):
                 ## MAKE SINGLE USER OBJECT DATA    
                 if settings.make_single_user == True:
                     ob.data = ob.data.copy()
+                    
+                ## REMOVE MODIFIERS
+                if settings.remove_all_modifiers or settings.remove_hidden_modifiers or settings.remove_unrendered_modifiers :
+                    if ob.modifiers:
+                        for mo in ob.modifiers:
+                            if settings.remove_all_modifiers:
+                                ob.modifiers.remove(mo)
+                            else:
+                                if settings.remove_hidden_modifiers:
+                                    if mo.show_viewport==False :
+                                        ob.modifiers.remove(mo)
+                                if settings.remove_unrendered_modifiers:
+                                    if mo.show_render==False :
+                                        ob.modifiers.remove(mo)
                 
                 ## APPLY SCALE
                 if settings.apply_scale == True:
@@ -268,12 +298,16 @@ class DialogOperator(bpy.types.Operator):
 #        bpy.ops.object.select_all(action='TOGGLE')
 
         ## SELECT OBJECTS WITH MODIFIER
-        for ob in bpy.data.objects:
-            ob.select = False
-        
-        for modifiers in myModifierList:
-            #print(settings.lenModifierList)
-            bpy.data.objects[modifiers].select=True
+#        for ob in bpy.data.objects:
+#            ob.select = False
+#        
+#        for modifiers in myModifierList:
+#            #print(settings.lenModifierList)
+#            bpy.data.objects[modifiers].select=True
+
+        ## RESELECT OBJECTS
+        for ob in list_selected :
+            ob.select = True
 
         ## END PROGRESS BAR
         wm.progress_end()      
@@ -331,11 +365,11 @@ class CleanerPanel(bpy.types.Panel):
     bl_label = "Killer Cleaner"
     bl_space_type = "VIEW_3D"
     bl_region_type = "TOOLS"
-    bl_category = "Killer CLeaner"
+    bl_category = "Tools"
     
     def draw(self, context):
         bl_idname = "object.dialog_operator"
-    bl_label = "KILLER CLEANER"
+        bl_label = "Killer Cleaner"
     
     def draw(self,context):
         
@@ -343,43 +377,71 @@ class CleanerPanel(bpy.types.Panel):
         layout = self.layout
         settings = context.scene.killer_cleaner_settings
         
+        bigcol = layout.column(align=False)
         
-        row=layout.row()
-        row=layout.row()
-        row=layout.row()
-        
-        for prop,icon in my_bool.items():
-            layout.prop(settings, prop, icon=icon[0])
+        ## OBJECT
+        box2 = bigcol.box()
+        box2.label("Object", icon="OBJECT_DATAMODE")
+        col = box2.column(align=True)
+        col.prop(settings, 'make_single_user', icon='OUTLINER_OB_GROUP_INSTANCE')
+        col.prop(settings, 'rename_objects', icon='FONT_DATA')
+        if settings.rename_objects:
+            col.prop(settings, "custom_rename", icon='SORTALPHA')
+            if settings.custom_rename:
+                col.prop(settings, "temp_ob_rename", text='', icon='OBJECT_DATAMODE')
+                col.prop(settings, "temp_mesh_rename", text='', icon='OUTLINER_DATA_MESH')
 
-            #row.label(icon=icon)
-            #row.prop(settings, prop)
-            
-        row=layout.row()
-        row=layout.row()
+        ## SHADING
+        box2 = bigcol.box()
+        box2.label("Shading", icon="MATERIAL")
+        col = box2.column(align=True)
+        col.prop(settings, 'remove_material', icon='MATERIAL_DATA')
+        col.prop(settings, 'double_sided', icon='MOD_BEVEL')
+        col.prop(settings, 'autosmooth', icon='SURFACE_NCIRCLE')
 
-        layout = self.layout
-        layout = self.layout
-        layout.operator("object.dialog_operator", icon = "SOLO_ON") #Create button Assign
-        
-        
+        ## MESH
+        box2 = bigcol.box()
+        box2.label("Mesh", icon="OUTLINER_DATA_MESH")
+        col = box2.column(align=True)
+        col.prop(settings, 'remove_doubles', icon='LATTICE_DATA')
+        col.prop(settings, 'tris_to_quad', icon='OUTLINER_OB_LATTICE')
+        col.prop(settings, 'apply_scale', icon='NDOF_TRANS')
+
+        ## NORMALS
+        box2 = bigcol.box()
+        box2.label("Normals", icon="SNAP_NORMAL")
+        col = box2.column(align=True)
+        col.prop(settings, 'clear_custom_normal', icon='UV_FACESEL')
+        col.prop(settings, 'recalculate_normals', icon='FACESEL')
+
+        ## MODIFIERS
+        box2 = bigcol.box()
+        box2.label("Modifiers", icon="MODIFIER")
+        col = box2.column(align=True)
+        col.prop(settings, 'remove_all_modifiers', icon='MODIFIER')
+        col.prop(settings, 'remove_hidden_modifiers', icon='RESTRICT_VIEW_OFF')
+        col.prop(settings, 'remove_unrendered_modifiers', icon='RESTRICT_RENDER_OFF')
+
+        layout.operator("object.dialog_operator", icon = "FILE_TICK") #Create button Assign
 
 ### Register / Unregister ###       
 def register():
-      
-    ## REGISTER    
+     ## REGISTER    
     bpy.utils.register_class(KillerCleanerSettings)
     bpy.utils.register_class(DialogOperator)
     bpy.utils.register_class(DialogOperator2)
-    bpy.types.Scene.killer_cleaner_settings = bpy.props.PointerProperty(type = KillerCleanerSettings)
     bpy.utils.register_class(CleanerPanel)
 
+    bpy.types.Scene.killer_cleaner_settings = bpy.props.PointerProperty(type = KillerCleanerSettings)
+
 def unregister():
+    ## UNREGISTER
+    bpy.utils.unregister_class(KillerCleanerSettings)
     bpy.utils.unregister_class(CleanerPanel)
+    bpy.utils.unregister_class(DialogOperator)
+    bpy.utils.unregister_class(DialogOperator2)
+
+    del bpy.types.Scene.killer_cleaner_settings
 
 if __name__ == "__main__":
     register()
-    
-
-# call test
-#bpy.ops.object.dialog_operator('INVOKE_DEFAULT')
-

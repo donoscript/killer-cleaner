@@ -424,6 +424,82 @@ class CleanerPanel(bpy.types.Panel):
 
         layout.operator("object.dialog_operator", icon = "FILE_TICK") #Create button Assign
 
+### Pop Up Menu ###
+class CleanerPopUpMenu(bpy.types.Operator):
+    bl_idname = "cleaner.popup_menu"
+    bl_label = "Killer Cleaner Menu"
+    bl_description = ""
+    bl_options = {"REGISTER"}
+    
+    @classmethod
+    def poll(cls, context):
+        return True
+    
+    def invoke(self, context, event):
+        wm = context.window_manager
+        return wm.invoke_props_dialog(self, width=300, height=100)
+    
+    def check(self, context):
+        return True
+    
+    def draw(self, context):
+        layout = self.layout
+        settings = context.scene.killer_cleaner_settings
+        
+        bigcol = layout.column(align=False)
+        
+        ## OBJECT
+        box2 = bigcol.box()
+        box2.label("Object", icon="OBJECT_DATAMODE")
+        col = box2.column(align=True)
+        col.prop(settings, 'make_single_user', icon='OUTLINER_OB_GROUP_INSTANCE')
+        col.prop(settings, 'rename_objects', icon='FONT_DATA')
+        if settings.rename_objects:
+            col.prop(settings, "custom_rename", icon='SORTALPHA')
+            if settings.custom_rename:
+                col.prop(settings, "temp_ob_rename", text='', icon='OBJECT_DATAMODE')
+                col.prop(settings, "temp_mesh_rename", text='', icon='OUTLINER_DATA_MESH')
+
+        ## SHADING
+        box2 = bigcol.box()
+        box2.label("Shading", icon="MATERIAL")
+        col = box2.column(align=True)
+        col.prop(settings, 'remove_material', icon='MATERIAL_DATA')
+        col.prop(settings, 'double_sided', icon='MOD_BEVEL')
+        col.prop(settings, 'autosmooth', icon='SURFACE_NCIRCLE')
+
+        ## MESH
+        box2 = bigcol.box()
+        box2.label("Mesh", icon="OUTLINER_DATA_MESH")
+        col = box2.column(align=True)
+        col.prop(settings, 'remove_doubles', icon='LATTICE_DATA')
+        col.prop(settings, 'tris_to_quad', icon='OUTLINER_OB_LATTICE')
+        col.prop(settings, 'apply_scale', icon='NDOF_TRANS')
+
+        ## NORMALS
+        box2 = bigcol.box()
+        box2.label("Normals", icon="SNAP_NORMAL")
+        col = box2.column(align=True)
+        col.prop(settings, 'clear_custom_normal', icon='UV_FACESEL')
+        col.prop(settings, 'recalculate_normals', icon='FACESEL')
+
+        ## MODIFIERS
+        box2 = bigcol.box()
+        box2.label("Modifiers", icon="MODIFIER")
+        col = box2.column(align=True)
+        col.prop(settings, 'remove_all_modifiers', icon='MODIFIER')
+        col.prop(settings, 'remove_hidden_modifiers', icon='RESTRICT_VIEW_OFF')
+        col.prop(settings, 'remove_unrendered_modifiers', icon='RESTRICT_RENDER_OFF')
+
+        layout.operator("object.dialog_operator", icon = "FILE_TICK") #Create button Assign
+
+    def execute(self, context):
+        pass
+        return {"FINISHED"}
+
+# store keymaps here to access after registration
+addon_keymaps = []
+
 ### Register / Unregister ###       
 def register():
      ## REGISTER    
@@ -431,8 +507,19 @@ def register():
     bpy.utils.register_class(DialogOperator)
     bpy.utils.register_class(DialogOperator2)
     bpy.utils.register_class(CleanerPanel)
+    bpy.utils.register_class(CleanerPopUpMenu)
 
     bpy.types.Scene.killer_cleaner_settings = bpy.props.PointerProperty(type = KillerCleanerSettings)
+
+    # KEYMAP
+    wm = bpy.context.window_manager
+    km = wm.keyconfigs.addon.keymaps.new(
+        name='3D View',
+        space_type='VIEW_3D',
+        region_type='WINDOW')
+    km1 = km.keymap_items.new(CleanerPopUpMenu.bl_idname, 'K', 'PRESS', alt=True)
+    
+    addon_keymaps.append(km)
 
 def unregister():
     ## UNREGISTER
@@ -440,8 +527,17 @@ def unregister():
     bpy.utils.unregister_class(CleanerPanel)
     bpy.utils.unregister_class(DialogOperator)
     bpy.utils.unregister_class(DialogOperator2)
+    bpy.utils.unregister_class(CleanerPopUpMenu)
 
     del bpy.types.Scene.killer_cleaner_settings
+
+    # keymap
+    wm = bpy.context.window_manager
+    for km in addon_keymaps:
+        wm.keyconfigs.addon.keymaps.remove(km)
+
+    # clear the list
+    del addon_keymaps[:]
 
 if __name__ == "__main__":
     register()
